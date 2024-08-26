@@ -16,14 +16,13 @@ ${showType(data.type, params)}
 
 ${showDefault(data.defaultvalue, params)}
 
-${showReturn(data.returns, params)}
-
 ${showEmit(data.fires, params)}
 
 ${showParameters(data.params, params)}
 ${showProperties(data.properties, params)}
 
 ${showThrows(data.exceptions, params)}
+${showReturn(data.returns, params)}
 ${showSee(data.see, params)}
 ${showExample(data)}
 `;
