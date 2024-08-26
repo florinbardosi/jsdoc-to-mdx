@@ -202,7 +202,9 @@ export const showEmit = (emits: Identifier["fires"], docParams: DocumentParams) 
   : "";
 
 export const showParameters = (params: Identifier["params"], docParams: DocumentParams) => params && params.length > 0
-  ? `|PARAMETER|TYPE|OPTIONAL|DEFAULT|DESCRIPTION|
+  ? `**Parameters**:
+
+|PARAMETER|TYPE|OPTIONAL|DEFAULT|DESCRIPTION|
 |:---:|:---:|:---:|:---:|:---:|
 ${params.map(param => `|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${inlineLink(getDescription(param, docParams))}|`).join("\n")}`
   : "";
@@ -234,7 +236,8 @@ ${see.map(val => parseType({ names: [getDescription(val, docParams)] }, docParam
   : "";
 
 export const showExample = (data: Identifier) => data.examples
-  ? data.examples.map(example => example.trim()).map(example => inlineLink(example)).join("\n\n")
+  ? `**Example**: 
+` + data.examples.map(example => example.trim()).map(example => inlineLink(example)).join("\n\n")
   : "";
 
 export const showInternalWarning = (data: Identifier) => isInternal(data) ? `<div className="notification is-warning my-2">⚠️ This ${data.kind} is for <strong>internal</strong> use only.</div>` : "";
