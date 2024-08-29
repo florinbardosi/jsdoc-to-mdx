@@ -201,12 +201,19 @@ export const showEmit = (emits: Identifier["fires"], docParams: DocumentParams) 
   ? `**Emits**: ${emits.map(emit => parseType({ names: [emit] }, docParams)).join(", ")}`
   : "";
 
+const removeParaTags = (text) => {
+    if (text.startsWith('<p>') && text.endsWith('</p>')) {
+      return text.slice(3, -4);
+    }
+    return text;
+  };
+
 export const showParameters = (params: Identifier["params"], docParams: DocumentParams) => params && params.length > 0
   ? `**Parameters**:
 
 |PARAMETER|TYPE|OPTIONAL|DEFAULT|DESCRIPTION|
 |:---:|:---:|:---:|:---:|:---:|
-${params.map(param => `|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${inlineLink(getDescription(param, docParams))}|`).join("\n")}`
+${params.map(param => `|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${removeParaTags(inlineLink(getDescription(param, docParams)))}|`).join("\n")}`
   : "";
 
 export const showProperties = (properties: Identifier["properties"], docParams: DocumentParams) => {
@@ -222,7 +229,7 @@ export const showProperties = (properties: Identifier["properties"], docParams: 
 ${properties.map(param => {
   const defaultValue = hasDefault ? `${`${param.defaultvalue ?? ""}`.trim()}|` : "";
 
-  return `|${param.name}|${parseType(param.type, docParams)}|${defaultValue}${inlineLink(getDescription(param, docParams))}|`;
+  return `|${param.name}|${parseType(param.type, docParams)}|${defaultValue}${removeParaTags(inlineLink(getDescription(param, docParams)))}|`;
 }).join("\n")}`;
 }
 
