@@ -239,8 +239,8 @@ export const showExample = (data: Identifier) => data.examples
   ? `**Example**:
 
 \`\`\`javascript
-` + data.examples.map(example => example.trim()).map(example => inlineLink(example)).join("\n\n")  + '
-```'
+` + data.examples.map(example => example.trim()).map(example => inlineLink(example)).join("\n\n")  + `
+\`\`\``
   : "";
 
 export const showInternalWarning = (data: Identifier) => isInternal(data) ? `<div className="notification is-warning my-2">⚠️ This ${data.kind} is for <strong>internal</strong> use only.</div>` : "";
