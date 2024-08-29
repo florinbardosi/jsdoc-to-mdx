@@ -213,7 +213,7 @@ export const showParameters = (params: Identifier["params"], docParams: Document
 
 |PARAMETER|TYPE|OPTIONAL|DEFAULT|DESCRIPTION|
 |:---:|:---:|:---:|:---:|:---:|
-${params.map(param => `|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${removeParaTags(inlineLink(getDescription(param, docParams)))}|`).join("\n")}`
+${params.map(param => `|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|')}|`).join("\n")}`
   : "";
 
 export const showProperties = (properties: Identifier["properties"], docParams: DocumentParams) => {
