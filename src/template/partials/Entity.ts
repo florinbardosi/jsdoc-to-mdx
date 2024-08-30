@@ -35,6 +35,7 @@ ${showDefault(data.defaultvalue, params)}
 ${showEmit(data.fires, params)}
 
 ${showParameters(data.params, params)}
+
 ${showProperties(data.properties, params)}
 
 ${showReturn(data.returns, params)}
