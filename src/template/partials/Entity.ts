@@ -14,8 +14,9 @@ const EntityTitle = (data, params, foldTitle = false) => {
             ? data.returns[0].type.names.join(' \\| ').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             : 'void';
 
-        const functionSignature = `${functionName}( ${functionParams} ) → ${returnType}`;
-
+        const functionSignature = functionParams
+            ? `${functionName}( ${functionParams} ) → ${returnType}`
+            : `${functionName}() → ${returnType}`;
         return `${foldTitle ? "" : `### ${functionSignature} {#${data.name}}`}`;
     } else {
         return `${foldTitle ? "" : `### ${data.name} {#${data.kind === "event" ? `event-${data.name}` : data.name}}`}`;
