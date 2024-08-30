@@ -37,8 +37,8 @@ ${showEmit(data.fires, params)}
 ${showParameters(data.params, params)}
 ${showProperties(data.properties, params)}
 
-${showThrows(data.exceptions, params)}
 ${showReturn(data.returns, params)}
+${showThrows(data.exceptions, params)}
 ${showSee(data.see, params)}
 ${showExample(data)}
 `;
