@@ -39,7 +39,9 @@ ${showParameters(data.params, params)}
 ${showProperties(data.properties, params)}
 
 ${showReturn(data.returns, params)}
+
 ${showThrows(data.exceptions, params)}
 ${showSee(data.see, params)}
+
 ${showExample(data)}
 `;
