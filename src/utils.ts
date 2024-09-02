@@ -219,45 +219,46 @@ export const showTypePropertyToParameters = (type: Identifier["type"], docParams
   const indent = "&nbsp;&nbsp;".repeat(depth);
   const prefix = depth > 0 ? "└ " : "";
 
-  return typeData.properties.map(prop => {
-    const type = parseType(prop.type, docParams);
-    const isOptional = "";//prop.optional ? "✔️" : "";
-    const defaultValue = inlineLink(prop.defaultvalue?.toString());
-    const description = removeParaTags(inlineLink(getDescription(prop, docParams))).replace(/\|/g, '\\|');
-
-    const row = `|${indent}${prefix}${prop.name}|${type}|${isOptional}|${defaultValue}|${description}|`;
-    
-    let subProperties = "";
-    if (prop.type) {
-      subProperties = showTypePropertyToParameters(prop.type, docParams, depth + 1);
-    }
-    
-    return `${row}${subProperties ? '\n' + subProperties : ''}`;
-  }).join("\n");
+  if (typeData.type && typeData.type.names[0] !== "String") {
+    return typeData.properties.map(prop => {
+      var _a;
+      const type = parseType(prop.type, docParams);
+      const isOptional = ""; //prop.optional ? "✔️" : "";
+      const defaultValue = inlineLink((_a = prop.defaultvalue) === null || _a === void 0 ? void 0 : _a.toString());
+      const description = removeParaTags(inlineLink(getDescription(prop, docParams))).replace(/\|/g, '\\|');
+      const row = `|${indent}${prefix}${prop.name}|${type}|${isOptional}|${defaultValue}|${description}|`;
+      let subProperties = "";
+      if (prop.type) {
+        subProperties = showTypePropertyToParameters(prop.type, docParams, depth + 1);
+      }
+      return `${row}${subProperties ? '\n' + subProperties : ''}`;
+    }).join("\n");
+  }
+  return "";
 }
 
 export const showParameters = (params: Identifier["params"], docParams: DocumentParams) => params && params.length > 0
   ? `**Parameters**:
 
 |PARAMETER|TYPE|OPTIONAL|DEFAULT|DESCRIPTION|
-|:---:|:---:|:---:|:---:|:---:|
+|:---|:---:|:---:|:---:|:---|
 ${params.map(param => {//`|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|')}|`).join("\n")}`
-  //: "";
-  const type = parseType(param.type, docParams);
-  const isOptional = param.optional ? "✔️" : "";
-  const defaultValue = inlineLink(param.defaultvalue?.toString());
-  const description = removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|');
+    //: "";
+    const type = parseType(param.type, docParams);
+    const isOptional = param.optional ? "✔️" : "";
+    const defaultValue = inlineLink(param.defaultvalue?.toString());
+    const description = removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|');
 
-  let row = `|${param.name}|${type}|${isOptional}|${defaultValue}|${description}|`;
-  if (param.type) {
-    const subProperties = showTypePropertyToParameters(param.type, docParams, 1);
-    if (subProperties) {
-      row += `\n${subProperties}`;
+    let row = `|${param.name}|${type}|${isOptional}|${defaultValue}|${description}|`;
+    if (param.type) {
+      const subProperties = showTypePropertyToParameters(param.type, docParams, 1);
+      if (subProperties) {
+        row += `\n${subProperties}`;
+      }
     }
-  }
-  
-  return row;
-}).join("\n")}`
+
+    return row;
+  }).join("\n")}`
   : "";
 
 export const showProperties = (properties: Identifier["properties"], docParams: DocumentParams) => {
@@ -277,7 +278,7 @@ ${properties.map(param => {
     let row = `|${param.name}|${parseType(param.type, docParams)}|${defaultValue}${description}|`;
 
     if (param.type) {
-      const subProperties = showTypePropertyToParameters(param.type, docParams);
+      const subProperties = showTypePropertyToParameters(param.type, docParams, 1);
       if (subProperties) {
         row += `\n${subProperties}`;
       }
