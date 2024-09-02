@@ -216,7 +216,7 @@ export const showTypePropertyToParameters = (type: Identifier["type"], docParams
 
   if (!typeData || !typeData.properties || typeData.properties.length === 0) return "";
 
-  const indent = "  ".repeat(depth);
+  const indent = "&nbsp;&nbsp;".repeat(depth);
   const prefix = depth > 0 ? "└ " : "";
 
   return typeData.properties.map(prop => {
@@ -288,7 +288,7 @@ ${properties.map(param => {
 }
 
 export const showThrows = (throws: Identifier["exceptions"], docParams: DocumentParams) => throws && throws.length > 0
-  ? `${throws.map(exception => `**Throws**: ${parseType(exception.type, docParams)}\n\n${inlineLink(getDescription(exception, docParams))}`).join("\n")}`
+  ? `${throws.map(exception => `**Throws**: ${parseType(exception.type, docParams)}\n${inlineLink(getDescription(exception, docParams))}`).join("\n")}`
   : "";
 
 export const showSee = (see: Identifier["see"], docParams: DocumentParams) => see
