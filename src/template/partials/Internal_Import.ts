@@ -6,7 +6,7 @@ import DocumentParams from "../../types/DocumentParams";
 /*
 "customTags": [
     {
-        tag: 'internal444',
+        tag: 'internal_import',
         value: "import Tabs from '@theme/Tabs';\nimport TabItem from '@theme/TabItem';"
     }
 ]
@@ -14,6 +14,6 @@ import DocumentParams from "../../types/DocumentParams";
 export default (classData: DocumentedClass) => {
     return classData.customTags
         ?.filter(tag => tag.tag === 'internal_import')
-        .map(tag => tag)
+        .map(tag => tag.value)
         .join("\n") ?? '';
 }
