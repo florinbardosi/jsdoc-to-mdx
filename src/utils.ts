@@ -297,8 +297,7 @@ ${see.map(val => parseType({ names: [getDescription(val, docParams)] }, docParam
   : "";
 
 export const showExample = (data: Identifier) => data.examples
-  ? `**Example**:
-\`\`\`javascript
+  ? `\`\`\`javascript
 ` + data.examples.map(example => example.trim()).map(example => inlineLink(example)).join("\n\n") + `
 \`\`\``
   : "";
