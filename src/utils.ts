@@ -208,16 +208,16 @@ export const showReturn = (returns: Identifier["returns"], docParams: DocumentPa
 
   const tabs = returns.map((ret, index) => {
     const { type, description } = ret;
-    const label = `응답 ${index + 1}`;
-    const content = `${type ? parseType(type, docParams) : ''}
-  ${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
+    const label = type ? type.names[0] : `응답 ${index + 1}`;
+    // ${type ? parseType(type, docParams) : ''}
+    const content = `${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
     return `<TabItem value="return${index}" label="${label}">${content}</TabItem>`;
   }).join('');
 
   return `**응답**:
-  <Tabs>
+<Tabs>
   ${tabs}
-  </Tabs>`;
+</Tabs>`;
 };
 export const showEmit = (emits: Identifier["fires"], docParams: DocumentParams) => emits && emits.length > 0
   ? `**Emits**: ${emits.map(emit => parseType({ names: [emit] }, docParams)).join(", ")}`

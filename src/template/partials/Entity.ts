@@ -11,7 +11,7 @@ const EntityTitle = (data, params, foldTitle = false) => {
         const functionName = data.name;
         const functionParams = data.params ? data.params.map(param => param.name).join(', ') : '';
         const returnType = data.returns && data.returns.length > 0
-            ? data.returns[0].type.names.join(' \\| ').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            ? data.returns[0].type.names.join(' \\| ').replace(/</g, '&lt;').replace(/>/g, '&gt;').join(', ')
             : 'void';
 
         const functionSignature = functionParams
