@@ -194,7 +194,7 @@ export const showDefault = (defaultVal: Identifier["defaultvalue"], docParams: D
 
 export const showReturn = (returns: Identifier["returns"], docParams: DocumentParams) => returns && returns.length > 0
   ? `**Returns**: ${returns.filter(val => !!val.type).map(({ type }) => parseType(type!, docParams))}
-${returns.map(val => val.description ? `- ${inlineLink(getDescription(val, docParams))}` : "").join("\n")}`
+${returns.map(val => val.description ? `${inlineLink(getDescription(val, docParams))}` : "").join("\n")}`
   : "";
 
 export const showEmit = (emits: Identifier["fires"], docParams: DocumentParams) => emits && emits.length > 0
