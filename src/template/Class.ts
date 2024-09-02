@@ -13,12 +13,15 @@ import ClassMethods from "./partials/ClassMethods";
 import ClassEvents from "./partials/ClassEvents";
 import DocumentParams from "../types/DocumentParams";
 import Entity from "./partials/Entity";
+import Internal_Import from "./partials/Internal_Import";
 
 export default (classData: DocumentedClass, params: DocumentParams): string => `---
 custom_edit_url: null
 ---
 
 ${Import()}
+
+${Internal_Import(classData)}
 
 ${showInternalWarning(classData)}
 
