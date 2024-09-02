@@ -192,11 +192,33 @@ export const showDefault = (defaultVal: Identifier["defaultvalue"], docParams: D
   ? `**Default**: ${parseType({ names: [defaultVal] }, docParams)}`
   : "";
 
-export const showReturn = (returns: Identifier["returns"], docParams: DocumentParams) => returns && returns.length > 0
-  ? `**Returns**: ${returns.filter(val => !!val.type).map(({ type }) => parseType(type!, docParams))}
-${returns.map(val => val.description ? `${inlineLink(getDescription(val, docParams))}` : "").join("\n")}`
-  : "";
+export const showReturn = (returns: Identifier["returns"], docParams: DocumentParams) => {
+  // => returns && returns.length > 0
+  // ? `**Returns**: ${returns.filter(val => !!val.type).map(({ type }) => parseType(type!, docParams))}
+  // ${returns.map(val => val.description ? `${inlineLink(getDescription(val, docParams))}` : "").join("\n")}`
+  // : "";
 
+  if (!returns || returns.length === 0) return "";
+
+  if (returns.length === 1) {
+    const { type, description } = returns[0];
+    return `**응답**: ${type ? parseType(type, docParams) : ''}
+  ${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
+  }
+
+  const tabs = returns.map((ret, index) => {
+    const { type, description } = ret;
+    const label = `응답 ${index + 1}`;
+    const content = `${type ? parseType(type, docParams) : ''}
+  ${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
+    return `<TabItem value="return${index}" label="${label}">${content}</TabItem>`;
+  }).join('');
+
+  return `**응답**:
+  <Tabs>
+  ${tabs}
+  </Tabs>`;
+};
 export const showEmit = (emits: Identifier["fires"], docParams: DocumentParams) => emits && emits.length > 0
   ? `**Emits**: ${emits.map(emit => parseType({ names: [emit] }, docParams)).join(", ")}`
   : "";
@@ -238,9 +260,7 @@ export const showTypePropertyToParameters = (type: Identifier["type"], docParams
 }
 
 export const showParameters = (params: Identifier["params"], docParams: DocumentParams) => params && params.length > 0
-  ? `**Parameters**:
-
-|PARAMETER|TYPE|OPTIONAL|DEFAULT|DESCRIPTION|
+  ? `|PARAMETER|TYPE|OPTIONAL|DEFAULT|DESCRIPTION|
 |:---|:---:|:---:|:---:|:---|
 ${params.map(param => {//`|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|')}|`).join("\n")}`
     //: "";
