@@ -14,6 +14,6 @@ import DocumentParams from "../../types/DocumentParams";
 export default (classData: DocumentedClass) => {
     return classData.customTags
         ?.filter(tag => tag.tag === 'internal_import')
-        .map(tag => tag.value)
+        .map(tag => tag)
         .join("\n") ?? '';
 }
