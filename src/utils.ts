@@ -177,11 +177,11 @@ export const showImplements = (data: Identifier) => data.implements && data.impl
 
 export const showTags = (data: Identifier, docParams: DocumentParams) => `<div${docParams.config.bulma ? ` className="bulma-tags"` : ""}>
 ${[
-  isStatic(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-info" : "badge badge--info"}">static</span>` : null,
-  isReadonly(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-warning" : "badge badge--warning"}">readonly</span>` : null,
-  isInherited(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-danger" : "badge badge--danger"}">inherited</span>` : null,
-  isAsync(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-success" : "badge badge--success"}">async</span>` : null
-].filter(val => !!val).map(val => `  ${val}`).join("\n")}
+    isStatic(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-info" : "badge badge--info"}">static</span>` : null,
+    isReadonly(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-warning" : "badge badge--warning"}">readonly</span>` : null,
+    isInherited(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-danger" : "badge badge--danger"}">inherited</span>` : null,
+    isAsync(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-success" : "badge badge--success"}">async</span>` : null
+  ].filter(val => !!val).map(val => `  ${val}`).join("\n")}
 </div>`;
 
 export const showType = (type: Identifier["type"], docParams: DocumentParams) => type
@@ -202,18 +202,62 @@ export const showEmit = (emits: Identifier["fires"], docParams: DocumentParams) 
   : "";
 
 const removeParaTags = (text) => {
-    if (text.startsWith('<p>') && text.endsWith('</p>')) {
-      return text.slice(3, -4);
+  if (text.startsWith('<p>') && text.endsWith('</p>')) {
+    return text.slice(3, -4);
+  }
+  return text;
+};
+
+export const showTypePropertyToParameters = (type: Identifier["type"], docParams: DocumentParams, depth: number = 0): string => {
+  if (!type || !type.names || type.names.length === 0) return "";
+
+  const typeName = type.names[0];
+  const typeData = docParams.dataMap.get(typeName);
+
+  if (!typeData || !typeData.properties || typeData.properties.length === 0) return "";
+
+  const indent = "  ".repeat(depth);
+  const prefix = depth > 0 ? "└ " : "";
+
+  return typeData.properties.map(prop => {
+    const type = parseType(prop.type, docParams);
+    const isOptional = "";//prop.optional ? "✔️" : "";
+    const defaultValue = inlineLink(prop.defaultvalue?.toString());
+    const description = removeParaTags(inlineLink(getDescription(prop, docParams))).replace(/\|/g, '\\|');
+
+    const row = `|${indent}${prefix}${prop.name}|${type}|${isOptional}|${defaultValue}|${description}|`;
+    
+    let subProperties = "";
+    if (prop.type) {
+      subProperties = showTypePropertyToParameters(prop.type, docParams, depth + 1);
     }
-    return text;
-  };
+    
+    return `${row}${subProperties ? '\n' + subProperties : ''}`;
+  }).join("\n");
+}
 
 export const showParameters = (params: Identifier["params"], docParams: DocumentParams) => params && params.length > 0
   ? `**Parameters**:
 
 |PARAMETER|TYPE|OPTIONAL|DEFAULT|DESCRIPTION|
 |:---:|:---:|:---:|:---:|:---:|
-${params.map(param => `|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|')}|`).join("\n")}`
+${params.map(param => {//`|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|')}|`).join("\n")}`
+  //: "";
+  const type = parseType(param.type, docParams);
+  const isOptional = param.optional ? "✔️" : "";
+  const defaultValue = inlineLink(param.defaultvalue?.toString());
+  const description = removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|');
+
+  let row = `|${param.name}|${type}|${isOptional}|${defaultValue}|${description}|`;
+  if (param.type) {
+    const subProperties = showTypePropertyToParameters(param.type, docParams, 1);
+    if (subProperties) {
+      row += `\n${subProperties}`;
+    }
+  }
+  
+  return row;
+}).join("\n")}`
   : "";
 
 export const showProperties = (properties: Identifier["properties"], docParams: DocumentParams) => {
@@ -227,10 +271,20 @@ export const showProperties = (properties: Identifier["properties"], docParams: 
   return `|PROPERTY|TYPE|${defaultTitle}DESCRIPTION|
 |:---:|:---:|${defaultLine}:---:|
 ${properties.map(param => {
-  const defaultValue = hasDefault ? `${`${param.defaultvalue ?? ""}`.trim()}|` : "";
+    const defaultValue = hasDefault ? `${`${param.defaultvalue ?? ""}`.trim()}|` : "";
+    const description = removeParaTags(inlineLink(getDescription(param, docParams)));
 
-  return `|${param.name}|${parseType(param.type, docParams)}|${defaultValue}${removeParaTags(inlineLink(getDescription(param, docParams)))}|`;
-}).join("\n")}`;
+    let row = `|${param.name}|${parseType(param.type, docParams)}|${defaultValue}${description}|`;
+
+    if (param.type) {
+      const subProperties = showTypePropertyToParameters(param.type, docParams);
+      if (subProperties) {
+        row += `\n${subProperties}`;
+      }
+    }
+
+    return row;
+  }).join("\n")}`;
 }
 
 export const showThrows = (throws: Identifier["exceptions"], docParams: DocumentParams) => throws && throws.length > 0
@@ -246,7 +300,7 @@ export const showExample = (data: Identifier) => data.examples
   ? `**Example**:
 
 \`\`\`javascript
-` + data.examples.map(example => example.trim()).map(example => inlineLink(example)).join("\n\n")  + `
+` + data.examples.map(example => example.trim()).map(example => inlineLink(example)).join("\n\n") + `
 \`\`\``
   : "";
 
