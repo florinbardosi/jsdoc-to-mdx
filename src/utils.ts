@@ -14,14 +14,17 @@ export const isInternal = (data: Identifier) => data.customTags && data.customTa
 export const isInherited = (data: Identifier) => !!data.inherited && data.inherits;
 export const isAsync = (data: Identifier) => !!data.async;
 
-export const getDescription = (data: { description?: string;[key: string]: any }, { locale }: DocumentParams) => {
+export const getDescription = (data: { description?: string;[key: string]: any }, docParams: DocumentParams) => {
+  const locale = docParams.locale;
   const description = data.description
     ? data[locale]
       ? data[locale] as string
       : data.description
     : "";
 
-  return description.replace(/\n/g, "<br />");
+  const embedResults = parseEmbed(description, docParams);
+
+  return embedResults.replace(/\n/g, "<br />");
 }
 
 export const parseTypescriptName = (name: string) => {
@@ -143,6 +146,23 @@ export const parseLink = (text?: string) => {
 
   return results;
 };
+
+// {@embed TypeName}가 텍스트에 포함되어 있으면 해당 타입의 properties를 ShowProperties로 표시
+export const parseEmbed = (text: string, docParams: DocumentParams) => {
+  if (!text) return "";
+
+  const embedRegex = /{@embed\s+([^\s}]+?)\s*}/g;
+  const embedMatches = embedRegex.exec(text);
+  if (embedMatches) {
+    const embedType = embedMatches[1];
+    const embedData = docParams.dataMap.get(embedType);
+    if (embedData) {
+      return showProperties(embedData.properties, docParams);
+    }
+  }
+  return text;
+};
+
 export const inlineLink = (text?: string) => {
   if (!text) return "";
 
