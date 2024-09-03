@@ -231,9 +231,16 @@ export const showReturn = (returns: Identifier["returns"], docParams: DocumentPa
 
   const tabs = returns.map((ret, index) => {
     const { type, description } = ret;
-    const label = type ? type.names[0] : `응답 ${index + 1}`;
+    let label = type ? type.names[0] : `응답 ${index + 1}`;
     // ${type ? parseType(type, docParams) : ''}
     const content = `${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
+
+    // {@tablabel name} 형식으로 되어 있는 경우 처리
+    const tabLabelMatch = /{@tablabel\s+([^\s}]+?)\s*}/.exec(content);
+    if (tabLabelMatch) {
+      label = tabLabelMatch[1];
+    }
+
     return `<TabItem value="return${index}" label="${label}">\n${content}\n</TabItem>`;
   }).join('');
 
