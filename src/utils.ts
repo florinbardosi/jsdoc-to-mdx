@@ -233,12 +233,13 @@ export const showReturn = (returns: Identifier["returns"], docParams: DocumentPa
     const { type, description } = ret;
     let label = type ? type.names[0] : `응답 ${index + 1}`;
     // ${type ? parseType(type, docParams) : ''}
-    const content = `${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
+    let content = `${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
 
     // {@tablabel name} 형식으로 되어 있는 경우 처리
-    const tabLabelMatch = /{@tablabel\s+([^\s}]+?)\s*}/.exec(content);
+    const tabLabelMatch = /{@tablabel\s+(.+?)}/i.exec(content);
     if (tabLabelMatch) {
-      label = tabLabelMatch[1];
+        label = tabLabelMatch[1];
+        content = content.replace(tabLabelMatch[0], '');
     }
 
     return `<TabItem value="return${index}" label="${label}">\n${content}\n</TabItem>`;
