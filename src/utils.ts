@@ -235,11 +235,11 @@ export const showReturn = (returns: Identifier["returns"], docParams: DocumentPa
     // ${type ? parseType(type, docParams) : ''}
     let content = `${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
 
-    // {@tablabel name} 형식으로 되어 있는 경우 처리
+    // {@tablabel name} 형식으로 되어 있는 경우 처리 
     const tabLabelMatch = /{@tablabel\s+(.+?)}/i.exec(content);
     if (tabLabelMatch) {
         label = tabLabelMatch[1];
-        content = content.replace(tabLabelMatch[0], '');
+        content = content.replace(tabLabelMatch[0] + '<br />', '');
     }
 
     return `<TabItem value="return${index}" label="${label}">\n${content}\n</TabItem>`;
