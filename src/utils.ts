@@ -16,15 +16,17 @@ export const isAsync = (data: Identifier) => !!data.async;
 
 export const getDescription = (data: { description?: string;[key: string]: any }, docParams: DocumentParams) => {
   const locale = docParams.locale;
-  const description = data.description
+  let description = data.description
     ? data[locale]
       ? data[locale] as string
       : data.description
     : "";
 
-  const embedResults = parseEmbed(description, docParams);
-
-  return embedResults.replace(/\n/g, "<br />");
+  if (description.startsWith('<p>') && description.endsWith('</p>')) {
+    description = description.slice(3, -4);
+  }
+  description = description.replace(/\n/g, "<br />");
+  return parseEmbed(description, docParams);
 }
 
 export const parseTypescriptName = (name: string) => {
@@ -148,16 +150,17 @@ export const parseLink = (text?: string) => {
 };
 
 // {@embed TypeName}가 텍스트에 포함되어 있으면 해당 타입의 properties를 ShowProperties로 표시
-export const parseEmbed = (text: string, docParams: DocumentParams) => {
-  if (!text) return "";
-
+const parseEmbed = (text, docParams) => {
+  if (!text)
+    return "";
   const embedRegex = /{@embed\s+([^\s}]+?)\s*}/g;
-  const embedMatches = embedRegex.exec(text);
-  if (embedMatches) {
+  let embedMatches;
+  while ((embedMatches = embedRegex.exec(text)) !== null) {
     const embedType = embedMatches[1];
     const embedData = docParams.dataMap.get(embedType);
     if (embedData) {
-      return showProperties(embedData.properties, docParams);
+      const embedContent = `\n${showProperties(embedData.properties, docParams)}`;
+      text = text.replace(embedMatches[0], embedContent);
     }
   }
   return text;
@@ -231,7 +234,7 @@ export const showReturn = (returns: Identifier["returns"], docParams: DocumentPa
     const label = type ? type.names[0] : `응답 ${index + 1}`;
     // ${type ? parseType(type, docParams) : ''}
     const content = `${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
-    return `<TabItem value="return${index}" label="${label}">${content}</TabItem>`;
+    return `<TabItem value="return${index}" label="${label}">\n${content}\n</TabItem>`;
   }).join('');
 
   return `**응답**:
@@ -310,7 +313,7 @@ export const showProperties = (properties: Identifier["properties"], docParams: 
   const defaultLine = hasDefault ? ":---:|" : "";
 
   return `|PROPERTY|TYPE|${defaultTitle}DESCRIPTION|
-|:---:|:---:|${defaultLine}:---:|
+|:---|:---:|${defaultLine}:---|
 ${properties.map(param => {
     const defaultValue = hasDefault ? `${`${param.defaultvalue ?? ""}`.trim()}|` : "";
     const description = removeParaTags(inlineLink(getDescription(param, docParams)));
