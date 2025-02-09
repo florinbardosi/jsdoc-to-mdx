@@ -14,14 +14,19 @@ export const isInternal = (data: Identifier) => data.customTags && data.customTa
 export const isInherited = (data: Identifier) => !!data.inherited && data.inherits;
 export const isAsync = (data: Identifier) => !!data.async;
 
-export const getDescription = (data: { description?: string;[key: string]: any }, { locale }: DocumentParams) => {
-  const description = data.description
+export const getDescription = (data: { description?: string;[key: string]: any }, docParams: DocumentParams) => {
+  const locale = docParams.locale;
+  let description = data.description
     ? data[locale]
       ? data[locale] as string
       : data.description
     : "";
 
-  return description.replace(/\n/g, "<br />");
+  if (description.startsWith('<p>') && description.endsWith('</p>')) {
+    description = description.slice(3, -4);
+  }
+  description = description.replace(/\n/g, "<br />");
+  return parseEmbed(description, docParams);
 }
 
 export const parseTypescriptName = (name: string) => {
@@ -143,6 +148,24 @@ export const parseLink = (text?: string) => {
 
   return results;
 };
+
+// {@embed TypeName}가 텍스트에 포함되어 있으면 해당 타입의 properties를 ShowProperties로 표시
+const parseEmbed = (text, docParams) => {
+  if (!text)
+    return "";
+  const embedRegex = /{@embed\s+([^\s}]+?)\s*}/g;
+  let embedMatches;
+  while ((embedMatches = embedRegex.exec(text)) !== null) {
+    const embedType = embedMatches[1];
+    const embedData = docParams.dataMap.get(embedType);
+    if (embedData) {
+      const embedContent = `\n${showProperties(embedData.properties, docParams)}`;
+      text = text.replace(embedMatches[0], embedContent);
+    }
+  }
+  return text;
+};
+
 export const inlineLink = (text?: string) => {
   if (!text) return "";
 
@@ -177,11 +200,11 @@ export const showImplements = (data: Identifier) => data.implements && data.impl
 
 export const showTags = (data: Identifier, docParams: DocumentParams) => `<div${docParams.config.bulma ? ` className="bulma-tags"` : ""}>
 ${[
-  isStatic(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-info" : "badge badge--info"}">static</span>` : null,
-  isReadonly(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-warning" : "badge badge--warning"}">readonly</span>` : null,
-  isInherited(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-danger" : "badge badge--danger"}">inherited</span>` : null,
-  isAsync(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-success" : "badge badge--success"}">async</span>` : null
-].filter(val => !!val).map(val => `  ${val}`).join("\n")}
+    isStatic(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-info" : "badge badge--info"}">static</span>` : null,
+    isReadonly(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-warning" : "badge badge--warning"}">readonly</span>` : null,
+    isInherited(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-danger" : "badge badge--danger"}">inherited</span>` : null,
+    isAsync(data) ? `<span className="${docParams.config.bulma ? "bulma-tag is-success" : "badge badge--success"}">async</span>` : null
+  ].filter(val => !!val).map(val => `  ${val}`).join("\n")}
 </div>`;
 
 export const showType = (type: Identifier["type"], docParams: DocumentParams) => type
@@ -192,19 +215,101 @@ export const showDefault = (defaultVal: Identifier["defaultvalue"], docParams: D
   ? `**Default**: ${parseType({ names: [defaultVal] }, docParams)}`
   : "";
 
-export const showReturn = (returns: Identifier["returns"], docParams: DocumentParams) => returns && returns.length > 0
-  ? `**Returns**: ${returns.filter(val => !!val.type).map(({ type }) => parseType(type!, docParams))}
-${returns.map(val => val.description ? `- ${inlineLink(getDescription(val, docParams))}` : "").join("\n")}`
-  : "";
+export const showReturn = (returns: Identifier["returns"], docParams: DocumentParams) => {
+  // => returns && returns.length > 0
+  // ? `**Returns**: ${returns.filter(val => !!val.type).map(({ type }) => parseType(type!, docParams))}
+  // ${returns.map(val => val.description ? `${inlineLink(getDescription(val, docParams))}` : "").join("\n")}`
+  // : "";
 
+  if (!returns || returns.length === 0) return "";
+
+  if (returns.length === 1) {
+    const { type, description } = returns[0];
+    return `**응답**: ${type ? parseType(type, docParams) : ''}
+  ${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
+  }
+
+  const tabs = returns.map((ret, index) => {
+    const { type, description } = ret;
+    let label = type ? type.names[0] : `응답 ${index + 1}`;
+    // ${type ? parseType(type, docParams) : ''}
+    let content = `${description ? inlineLink(getDescription({ description }, docParams)) : ''}`;
+
+    // {@tablabel name} 형식으로 되어 있는 경우 처리 
+    const tabLabelMatch = /{@tablabel\s+(.+?)}/i.exec(content);
+    if (tabLabelMatch) {
+        label = tabLabelMatch[1];
+        content = content.replace(tabLabelMatch[0] + '<br />', '');
+    }
+
+    return `<TabItem value="return${index}" label="${label}">\n${content}\n</TabItem>`;
+  }).join('');
+
+  return `**응답**:
+<Tabs>
+  ${tabs}
+</Tabs>`;
+};
 export const showEmit = (emits: Identifier["fires"], docParams: DocumentParams) => emits && emits.length > 0
   ? `**Emits**: ${emits.map(emit => parseType({ names: [emit] }, docParams)).join(", ")}`
   : "";
 
+const removeParaTags = (text) => {
+  if (text.startsWith('<p>') && text.endsWith('</p>')) {
+    return text.slice(3, -4);
+  }
+  return text;
+};
+
+export const showTypePropertyToParameters = (type: Identifier["type"], docParams: DocumentParams, depth: number = 0): string => {
+  if (!type || !type.names || type.names.length === 0) return "";
+
+  const typeName = type.names[0];
+  const typeData = docParams.dataMap.get(typeName);
+
+  if (!typeData || !typeData.properties || typeData.properties.length === 0) return "";
+
+  const indent = "&nbsp;&nbsp;".repeat(depth);
+  const prefix = depth > 0 ? "└ " : "";
+
+  if (typeData.type && typeData.type.names[0] !== "String") {
+    return typeData.properties.map(prop => {
+      var _a;
+      const type = parseType(prop.type, docParams);
+      const isOptional = ""; //prop.optional ? "✔️" : "";
+      const defaultValue = inlineLink((_a = prop.defaultvalue) === null || _a === void 0 ? void 0 : _a.toString());
+      const description = removeParaTags(inlineLink(getDescription(prop, docParams))).replace(/\|/g, '\\|');
+      const row = `|${indent}${prefix}${prop.name}|${type}|${isOptional}|${defaultValue}|${description}|`;
+      let subProperties = "";
+      if (prop.type) {
+        subProperties = showTypePropertyToParameters(prop.type, docParams, depth + 1);
+      }
+      return `${row}${subProperties ? '\n' + subProperties : ''}`;
+    }).join("\n");
+  }
+  return "";
+}
+
 export const showParameters = (params: Identifier["params"], docParams: DocumentParams) => params && params.length > 0
   ? `|PARAMETER|TYPE|OPTIONAL|DEFAULT|DESCRIPTION|
-|:---:|:---:|:---:|:---:|:---:|
-${params.map(param => `|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${inlineLink(getDescription(param, docParams))}|`).join("\n")}`
+|:---|:---:|:---:|:---:|:---|
+${params.map(param => {//`|${param.name}|${parseType(param.type, docParams)}|${param.optional ? "✔️" : ""}|${inlineLink(param.defaultvalue?.toString())}|${removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|')}|`).join("\n")}`
+    //: "";
+    const type = parseType(param.type, docParams);
+    const isOptional = param.optional ? "✔️" : "";
+    const defaultValue = inlineLink(param.defaultvalue?.toString());
+    const description = removeParaTags(inlineLink(getDescription(param, docParams))).replace(/\|/g, '\\|');
+
+    let row = `|${param.name}|${type}|${isOptional}|${defaultValue}|${description}|`;
+    if (param.type) {
+      const subProperties = showTypePropertyToParameters(param.type, docParams, 1);
+      if (subProperties) {
+        row += `\n${subProperties}`;
+      }
+    }
+
+    return row;
+  }).join("\n")}`
   : "";
 
 export const showProperties = (properties: Identifier["properties"], docParams: DocumentParams) => {
@@ -216,16 +321,26 @@ export const showProperties = (properties: Identifier["properties"], docParams: 
   const defaultLine = hasDefault ? ":---:|" : "";
 
   return `|PROPERTY|TYPE|${defaultTitle}DESCRIPTION|
-|:---:|:---:|${defaultLine}:---:|
+|:---|:---:|${defaultLine}:---|
 ${properties.map(param => {
-  const defaultValue = hasDefault ? `${`${param.defaultvalue ?? ""}`.trim()}|` : "";
+    const defaultValue = hasDefault ? `${`${param.defaultvalue ?? ""}`.trim()}|` : "";
+    const description = removeParaTags(inlineLink(getDescription(param, docParams)));
 
-  return `|${param.name}|${parseType(param.type, docParams)}|${defaultValue}${inlineLink(getDescription(param, docParams))}|`;
-}).join("\n")}`;
+    let row = `|${param.name}|${parseType(param.type, docParams)}|${defaultValue}${description}|`;
+
+    if (param.type) {
+      const subProperties = showTypePropertyToParameters(param.type, docParams, 1);
+      if (subProperties) {
+        row += `\n${subProperties}`;
+      }
+    }
+
+    return row;
+  }).join("\n")}`;
 }
 
 export const showThrows = (throws: Identifier["exceptions"], docParams: DocumentParams) => throws && throws.length > 0
-  ? `${throws.map(exception => `**Throws**: ${parseType(exception.type, docParams)}\n\n${inlineLink(getDescription(exception, docParams))}`).join("\n")}`
+  ? `${throws.map(exception => `**Throws**: ${parseType(exception.type, docParams)}\n${inlineLink(getDescription(exception, docParams))}`).join("\n")}`
   : "";
 
 export const showSee = (see: Identifier["see"], docParams: DocumentParams) => see
@@ -234,7 +349,9 @@ ${see.map(val => parseType({ names: [getDescription(val, docParams)] }, docParam
   : "";
 
 export const showExample = (data: Identifier) => data.examples
-  ? data.examples.map(example => example.trim()).map(example => inlineLink(example)).join("\n\n")
+  ? `\`\`\`javascript
+` + data.examples.map(example => example.trim()).map(example => inlineLink(example)).join("\n\n") + `
+\`\`\``
   : "";
 
 export const showInternalWarning = (data: Identifier) => isInternal(data) ? `<div className="notification is-warning my-2">⚠️ This ${data.kind} is for <strong>internal</strong> use only.</div>` : "";

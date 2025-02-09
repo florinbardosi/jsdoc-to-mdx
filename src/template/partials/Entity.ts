@@ -6,7 +6,24 @@ import DocumentParams from "../../types/DocumentParams";
 import Identifier from "../../types/Identifier";
 import { getDescription, inlineLink, showDefault, showEmit, showExample, showInternalWarning, showParameters, showProperties, showReturn, showSee, showTags, showThrows, showType } from "../../utils";
 
-export default (data: Identifier, params: DocumentParams, foldTitle = false) => `${foldTitle ? "" : `### ${data.name} {#${data.kind === "event" ? `event-${data.name}` : data.name}}`}
+const EntityTitle = (data, params, foldTitle = false) => {
+    if (data.kind === "function") {
+        const functionName = data.name;
+        const functionParams = data.params ? data.params.map(param => param.name).join(', ') : '';
+        const returnType = data.returns && data.returns.length > 0
+            ? data.returns.map(ret => ret.type.names.join(' \\| ').replace(/</g, '&lt;').replace(/>/g, '&gt;')).join(', ')
+            : 'void';
+
+        const functionSignature = functionParams
+            ? `${functionName}( ${functionParams} ) → ${returnType}`
+            : `${functionName}() → ${returnType}`;
+        return `${foldTitle ? "" : `### ${functionSignature} {#${data.name}}`}`;
+    } else {
+        return `${foldTitle ? "" : `### ${data.name} {#${data.kind === "event" ? `event-${data.name}` : data.name}}`}`;
+    }
+};
+
+export default (data: Identifier, params: DocumentParams, foldTitle = false) => `${EntityTitle(data, params, foldTitle)}
 
 ${showTags(data, params)}
 
@@ -16,14 +33,16 @@ ${showType(data.type, params)}
 
 ${showDefault(data.defaultvalue, params)}
 
-${showReturn(data.returns, params)}
-
 ${showEmit(data.fires, params)}
 
 ${showParameters(data.params, params)}
+
 ${showProperties(data.properties, params)}
+
+${showReturn(data.returns, params)}
 
 ${showThrows(data.exceptions, params)}
 ${showSee(data.see, params)}
+
 ${showExample(data)}
 `;

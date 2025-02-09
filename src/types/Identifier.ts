@@ -69,6 +69,7 @@ interface Identifier {
   // Custom tags, like @internal
   customTags?: Array<{
     tag: string;
+    value: string;
   }>;
 }
 
